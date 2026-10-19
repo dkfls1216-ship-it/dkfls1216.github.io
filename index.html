@@ -1,1 +1,59 @@
-<h1>안녕</h1>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>방송 스케줄</title>
+<style>
+body{font-family:sans-serif;background:#dfe5f0;margin:0;padding:12px;color:#334}
+h1{font-size:18px;margin:0 0 8px}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+button{border:0;border-radius:16px;padding:8px 14px;background:#7188b5;color:#fff;font-size:14px}
+.day{background:#fff;border-radius:10px;padding:8px 10px;margin-bottom:6px}
+.day b{display:block;margin-bottom:4px}
+.ev{background:#eef1f8;border-left:4px solid #7188b5;border-radius:6px;padding:6px 8px;margin-top:4px;font-size:14px}
+.ev small{color:#789}
+.sum{font-size:13px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<h1>방송 스케줄</h1>
+<div class="bar">
+<button onclick="move(-7)">←</button>
+<span id="range"></span>
+<button onclick="move(7)">→</button>
+</div>
+<div class="sum" id="sum"></div>
+<div id="cal"></div>
+<script>
+// 샘플 일정 (나중에 JSON으로 교체)
+const events=[
+{date:"2026-10-19",start:"21:00",hours:3,title:"샘플 방송 1",game:"OW"},
+{date:"2026-10-21",start:"14:30",hours:2.5,title:"샘플 방송 2",game:"APEX"},
+{date:"2026-10-23",start:"20:00",hours:4,title:"샘플 방송 3",game:"스플래툰"}
+];
+let base=new Date();
+base.setDate(base.getDate()-((base.getDay()+6)%7)); // 이번 주 월요일
+const fmt=d=>d.toISOString().slice(0,10);
+const names=["월","화","수","목","금","토","일"];
+function move(n){base.setDate(base.getDate()+n);draw();}
+function draw(){
+ let html="",total=0;
+ for(let i=0;i<7;i++){
+  const d=new Date(base);d.setDate(d.getDate()+i);
+  const list=events.filter(e=>e.date===fmt(d));
+  html+=`<div class="day"><b>${d.getMonth()+1}/${d.getDate()} (${names[i]})</b>`;
+  if(!list.length)html+="<small>방송 없음</small>";
+  list.forEach(e=>{total+=e.hours;html+=`<div class="ev">${e.start} · ${e.title}<br><small>${e.game} · ${e.hours}시간</small></div>`;});
+  html+="</div>";
+ }
+ const end=new Date(base);end.setDate(end.getDate()+6);
+ document.getElementById("range").textContent=`${base.getMonth()+1}/${base.getDate()} - ${end.getMonth()+1}/${end.getDate()}`;
+ document.getElementById("sum").textContent=`이번 주 합계: ${total}시간`;
+ document.getElementById("cal").innerHTML=html;
+}
+draw();
+</script>
+</body>
+</html>
+
