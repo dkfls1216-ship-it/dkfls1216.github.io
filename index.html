@@ -309,5 +309,74 @@ Promise.all([
 ]).then(r=>{events=r[0];notes=r[1];build();drawNotes();draw();})
  .catch(()=>{document.getElementById("cal").textContent="data.json을 불러오지 못했어요";});
 </script>
+<style>
+.nadd{border:0;background:#b3263b;color:#fff;border-radius:14px;padding:4px 12px;font:inherit;font-size:13px;margin-top:6px}
+.ndel{border:0;background:none;color:#a07077;font-size:16px;margin-left:auto;padding:0 4px}
+.finp{width:100%;padding:10px;border:1px solid #e0b5bb;border-radius:8px;font:inherit;font-size:16px;margin:4px 0 8px;background:#fff}
+.save{width:100%;border:0;background:#b3263b;color:#fff;border-radius:20px;padding:10px;font:inherit;font-size:15px;margin-top:6px}
+.flab{font-size:13px;color:#a07077}
+</style>
+<script>
+const LS="myNotes";
+function loadMy(){try{return JSON.parse(localStorage.getItem(LS)||"[]");}catch(e){return [];}}
+function saveMy(a){try{localStorage.setItem(LS,JSON.stringify(a));}catch(e){}}
+function drawNotes(){
+ const box=document.getElementById("notes");
+ box.innerHTML="";box.style.display="block";
+ const now=new Date();
+ const all=notes.map(n=>({t:n.title,d:new Date(n.date),my:false}))
+  .concat(loadMy().map((n,i)=>({t:n.title,d:new Date(n.date),my:true,i:i})))
+  .filter(n=>n.d>=now).sort((a,b)=>a.d-b.d).slice(0,3);
+ if(!all.length){
+  const e=document.createElement("div");
+  e.className="ndate";e.textContent="마감 메모가 없어요";
+  box.appendChild(e);
+ }
+ all.forEach(n=>{
+  const row=document.createElement("div");row.className="nrow";
+  const c=document.createElement("span");c.className="nchip";
+  c.textContent="D-"+Math.ceil((n.d-now)/86400000);
+  const w=document.createElement("div");
+  const t=document.createElement("div");t.className="ntit";t.textContent=n.t;
+  const dt=document.createElement("div");dt.className="ndate";
+  dt.textContent=(n.d.getMonth()+1)+"/"+n.d.getDate()+" "+hm(n.d);
+  w.appendChild(t);w.appendChild(dt);
+  row.appendChild(c);row.appendChild(w);
+  if(n.my){
+   const del=document.createElement("button");
+   del.className="ndel";del.textContent="✕";
+   del.onclick=()=>{const a=loadMy();a.splice(n.i,1);saveMy(a);drawNotes();};
+   row.appendChild(del);
+  }
+  box.appendChild(row);
+ });
+ const add=document.createElement("button");
+ add.className="nadd";add.textContent="+ 메모";
+ add.onclick=openNoteForm;
+ box.appendChild(add);
+}
+function openNoteForm(){
+ const card=document.getElementById("card");
+ card.innerHTML="";
+ const x=document.createElement("button");
+ x.className="x";x.textContent="✕";x.onclick=closeCard;
+ card.appendChild(x);
+ const h=document.createElement("h2");h.textContent="마감 메모 추가";
+ card.appendChild(h);
+ const l1=document.createElement("div");l1.className="flab";l1.textContent="내용";
+ const t=document.createElement("input");t.className="finp";t.placeholder="예: 굿즈 주문 마감";
+ const l2=document.createElement("div");l2.className="flab";l2.textContent="마감 날짜·시간";
+ const d=document.createElement("input");d.className="finp";d.type="datetime-local";
+ const s=document.createElement("button");s.className="save";s.textContent="저장";
+ s.onclick=()=>{
+  if(!t.value.trim()||!d.value)return;
+  const a=loadMy();
+  a.push({title:t.value.trim(),date:new Date(d.value).toISOString()});
+  saveMy(a);closeCard();drawNotes();
+ };
+ [l1,t,l2,d,s].forEach(el=>card.appendChild(el));
+ document.getElementById("modal").classList.add("show");
+}
+</script>
 </body>
 </html>
