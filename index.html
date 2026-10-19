@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>방송 스케줄</title>
+<title>ローレン・イロアス 방송 스케줄</title>
 <style>
 body{font-family:sans-serif;background:#dfe5f0;margin:0;padding:12px;color:#334}
 h1{font-size:18px;margin:0 0 8px}
@@ -11,49 +11,80 @@ h1{font-size:18px;margin:0 0 8px}
 button{border:0;border-radius:16px;padding:8px 14px;background:#7188b5;color:#fff;font-size:14px}
 .day{background:#fff;border-radius:10px;padding:8px 10px;margin-bottom:6px}
 .day b{display:block;margin-bottom:4px}
-.ev{background:#eef1f8;border-left:4px solid #7188b5;border-radius:6px;padding:6px 8px;margin-top:4px;font-size:14px}
+.ev{display:flex;gap:8px;background:#eef1f8;border-left:4px solid #7188b5;border-radius:6px;padding:6px 8px;margin-top:4px;font-size:14px;color:inherit;text-decoration:none}
+.ev img{width:80px;height:45px;object-fit:cover;border-radius:4px;flex:none}
 .ev small{color:#789}
 .sum{font-size:13px;margin-bottom:8px}
+.tag{background:#d9534f;color:#fff;border-radius:8px;padding:0 6px;font-size:11px;margin-right:4px}
 </style>
 </head>
 <body>
-<h1>방송 스케줄</h1>
+<h1>ローレン・イロアス 방송 스케줄</h1>
 <div class="bar">
 <button onclick="move(-7)">←</button>
 <span id="range"></span>
 <button onclick="move(7)">→</button>
 </div>
 <div class="sum" id="sum"></div>
-<div id="cal"></div>
+<div id="cal">불러오는 중...</div>
 <script>
-// 샘플 일정 (나중에 JSON으로 교체)
-const events=[
-{date:"2026-10-19",start:"21:00",hours:3,title:"샘플 방송 1",game:"OW"},
-{date:"2026-10-21",start:"14:30",hours:2.5,title:"샘플 방송 2",game:"APEX"},
-{date:"2026-10-23",start:"20:00",hours:4,title:"샘플 방송 3",game:"스플래툰"}
-];
+let events=[];
 let base=new Date();
-base.setDate(base.getDate()-((base.getDay()+6)%7)); // 이번 주 월요일
-const fmt=d=>d.toISOString().slice(0,10);
+base.setHours(0,0,0,0);
+base.setDate(base.getDate()-((base.getDay()+6)%7));
 const names=["월","화","수","목","금","토","일"];
+const pad=n=>String(n).padStart(2,"0");
+const key=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 function move(n){base.setDate(base.getDate()+n);draw();}
 function draw(){
- let html="",total=0;
+ const cal=document.getElementById("cal");
+ cal.innerHTML="";
+ let total=0;
  for(let i=0;i<7;i++){
   const d=new Date(base);d.setDate(d.getDate()+i);
-  const list=events.filter(e=>e.date===fmt(d));
-  html+=`<div class="day"><b>${d.getMonth()+1}/${d.getDate()} (${names[i]})</b>`;
-  if(!list.length)html+="<small>방송 없음</small>";
-  list.forEach(e=>{total+=e.hours;html+=`<div class="ev">${e.start} · ${e.title}<br><small>${e.game} · ${e.hours}시간</small></div>`;});
-  html+="</div>";
+  const box=document.createElement("div");box.className="day";
+  const h=document.createElement("b");
+  h.textContent=(d.getMonth()+1)+"/"+d.getDate()+" ("+names[i]+")";
+  box.appendChild(h);
+  const list=events.filter(e=>key(new Date(e.start))===key(d));
+  if(!list.length){
+   const s=document.createElement("small");
+   s.textContent="방송 없음";
+   box.appendChild(s);
+  }
+  list.forEach(e=>{
+   total+=e.hours||0;
+   const a=document.createElement("a");
+   a.className="ev";
+   a.href="https://www.youtube.com/watch?v="+e.id;
+   a.target="_blank";a.rel="noopener";
+   if(e.thumb){const im=document.createElement("img");im.src=e.thumb;im.alt="";a.appendChild(im);}
+   const t=document.createElement("div");
+   const st=new Date(e.start);
+   if(e.status==="upcoming"||e.status==="live"){
+    const tag=document.createElement("span");
+    tag.className="tag";
+    tag.textContent=e.status==="live"?"LIVE":"예정";
+    t.appendChild(tag);
+   }
+   t.appendChild(document.createTextNode(pad(st.getHours())+":"+pad(st.getMinutes())+" "+e.title));
+   t.appendChild(document.createElement("br"));
+   const sm=document.createElement("small");
+   sm.textContent=e.hours?e.hours+"시간":"";
+   t.appendChild(sm);
+   a.appendChild(t);
+   box.appendChild(a);
+  });
+  cal.appendChild(box);
  }
  const end=new Date(base);end.setDate(end.getDate()+6);
- document.getElementById("range").textContent=`${base.getMonth()+1}/${base.getDate()} - ${end.getMonth()+1}/${end.getDate()}`;
- document.getElementById("sum").textContent=`이번 주 합계: ${total}시간`;
- document.getElementById("cal").innerHTML=html;
+ document.getElementById("range").textContent=(base.getMonth()+1)+"/"+base.getDate()+" - "+(end.getMonth()+1)+"/"+end.getDate();
+ document.getElementById("sum").textContent="이번 주 합계: "+Math.round(total*10)/10+"시간";
 }
-draw();
+fetch("data.json?"+Date.now())
+ .then(r=>r.json())
+ .then(d=>{events=d;draw();})
+ .catch(()=>{document.getElementById("cal").textContent="data.json을 불러오지 못했어요";});
 </script>
 </body>
 </html>
-
